@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<meta name="mobile-web-app-capable" content="yes">
+<title>carbonMICE Booth</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Sarabun:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --blue:#065DED; --mint:#35E5C0; --navy:#1A1A2E; --deep-mint:#0FAE8E;
+  --slate:#8A94A6; --bg:#F4F7FB; --sky:#EAF2FF; --line:#EAEEF5;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+html,body{width:100%;height:100%;overflow:hidden;background:#000;overscroll-behavior:none}
+body{font-family:'Sarabun','Inter',system-ui,sans-serif;color:var(--navy);touch-action:manipulation}
+button{font:inherit;border:0;cursor:pointer;color:inherit;background:none}
+.screen{position:fixed;inset:0}
+[hidden]{display:none!important}
+
+/* ---------- ปุ่มเต็มจอ (ลอยทุกหน้า) ---------- */
+#fsBtn{
+  position:fixed;z-index:60;right:14px;bottom:14px;width:52px;height:52px;border-radius:14px;
+  background:rgba(26,26,46,.55);color:#fff;font-size:24px;display:grid;place-items:center;
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.25)
+}
+#fsBtn:active{transform:scale(.94)}
+body.in-frame #fsBtn{bottom:auto;top:10px;right:10px;width:44px;height:44px;font-size:20px}
+
+/* ---------- 1) หน้าเริ่ม (แตะ 1 ครั้งตอนตั้งบูธ) ---------- */
+#start{
+  z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3vmin;
+  background:radial-gradient(120% 80% at 50% 0%,var(--sky) 0%,var(--bg) 60%);text-align:center;padding:0 24px
+}
+#start img{width:min(46vmin,420px)}
+#start h1{font-size:clamp(22px,4.2vmin,40px);font-weight:800}
+#startBtn{
+  margin-top:1vmin;padding:2.4vmin 7vmin;border-radius:99px;font-size:clamp(20px,4vmin,36px);font-weight:800;
+  color:#fff;background:linear-gradient(135deg,var(--blue),#3A82FF);box-shadow:0 12px 30px rgba(6,93,237,.35)
+}
+#startBtn:active{transform:scale(.97)}
+#loadInfo{font-size:clamp(13px,2.2vmin,18px);color:var(--slate);min-height:1.5em}
+#loadBar{width:min(60vmin,420px);height:8px;border-radius:99px;background:var(--line);overflow:hidden}
+#loadBar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--blue),var(--mint));transition:width .3s}
+
+/* ---------- 2) วิดีโอวน ---------- */
+#videoScr{background:#000}
+#vid{width:100%;height:100%;object-fit:contain;background:#000;display:block}
+#tapHint{
+  position:absolute;left:50%;bottom:4vmin;transform:translateX(-50%);
+  padding:1.6vmin 4vmin;border-radius:99px;background:rgba(6,93,237,.88);color:#fff;
+  font-size:clamp(16px,3vmin,28px);font-weight:700;white-space:nowrap;
+  box-shadow:0 8px 24px rgba(0,0,0,.35);animation:pulse 2.2s ease-in-out infinite;pointer-events:none
+}
+@keyframes pulse{0%,100%{transform:translateX(-50%) scale(1)}50%{transform:translateX(-50%) scale(1.05)}}
+#soundChip{
+  position:absolute;top:14px;left:14px;padding:10px 18px;border-radius:99px;background:rgba(255,255,255,.92);
+  font-weight:800;font-size:18px;color:var(--navy)
+}
+
+/* ---------- 3) เมนู ---------- */
+#menu{
+  background:radial-gradient(120% 70% at 50% -10%,var(--sky) 0%,var(--bg) 60%);
+  display:flex;flex-direction:column;padding:3.5vmin max(16px,4vmin);gap:3vmin
+}
+.m-head{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.m-head img{height:clamp(56px,11vmin,120px)}
+#backVideo{
+  display:inline-flex;align-items:center;gap:10px;padding:1.6vmin 3.4vmin;border-radius:99px;
+  background:var(--navy);color:#fff;font-weight:800;font-size:clamp(16px,2.8vmin,26px)
+}
+#backVideo:active{transform:scale(.97)}
+.m-title{text-align:center}
+.m-title h1{font-size:clamp(24px,5vmin,52px);font-weight:800;line-height:1.25}
+.m-title h1 span{color:var(--blue)}
+.m-title p{font-size:clamp(15px,2.6vmin,24px);color:var(--slate);margin-top:.6vmin}
+.cards{flex:1;display:grid;gap:3vmin;grid-template-columns:1fr 1fr;min-height:0}
+.card{
+  position:relative;overflow:hidden;border-radius:28px;padding:4vmin;text-align:left;
+  display:flex;flex-direction:column;justify-content:center;gap:1.2vmin;
+  box-shadow:0 14px 36px rgba(20,30,60,.14)
+}
+.card:active{transform:scale(.98)}
+.card .emo{font-size:clamp(52px,11vmin,120px);line-height:1}
+.card h2{font-size:clamp(26px,5.4vmin,56px);font-weight:800;line-height:1.2}
+.card p{font-size:clamp(15px,2.7vmin,26px);line-height:1.45;opacity:.95}
+.card .go{
+  align-self:flex-start;margin-top:1.4vmin;padding:1.2vmin 3.4vmin;border-radius:99px;
+  background:rgba(255,255,255,.9);font-weight:800;font-size:clamp(16px,2.8vmin,26px)
+}
+.c-game{background:linear-gradient(135deg,#0FAE8E 0%,#35E5C0 100%);color:#06382F}
+.c-game .go{color:var(--deep-mint)}
+.c-plat{background:linear-gradient(135deg,#065DED 0%,#3A82FF 100%);color:#fff}
+.c-plat .go{color:var(--blue)}
+@media (orientation:portrait){
+  .cards{grid-template-columns:1fr;grid-template-rows:1fr 1fr}
+  .m-head{justify-content:center}
+}
+
+/* ---------- 4) กรอบเกม / platform ---------- */
+#frameScr{background:#fff;display:flex;flex-direction:column}
+.bar{
+  flex:0 0 auto;display:flex;align-items:center;gap:10px;padding:8px 66px 8px 10px;
+  background:var(--navy);color:#fff;flex-wrap:wrap
+}
+.bar button,.bar a{
+  display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:99px;
+  font-weight:800;font-size:17px;text-decoration:none;color:#fff;white-space:nowrap
+}
+.b-home{background:var(--blue)}
+.b-menu{background:rgba(255,255,255,.14)}
+.b-ext{background:rgba(255,255,255,.14);margin-left:auto}
+.bar button:active,.bar a:active{transform:scale(.96)}
+#frameTitle{font-weight:700;font-size:16px;opacity:.8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#frameWrap{position:relative;flex:1;min-height:0}
+#frame{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff}
+#frameLoading{position:absolute;inset:0;display:grid;place-items:center;color:var(--slate);font-size:20px;background:#fff}
+
+/* ---------- เตือนก่อนกลับวิดีโออัตโนมัติ ---------- */
+#idleWarn{
+  z-index:70;display:grid;place-items:center;background:rgba(10,12,24,.6);
+  backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);padding:16px
+}
+.iw-box{background:#fff;border-radius:24px;padding:28px 32px;text-align:center;max-width:460px;width:100%}
+.iw-box h3{font-size:24px;font-weight:800}
+.iw-box p{font-size:18px;color:var(--slate);margin-top:6px}
+.iw-box b{color:var(--blue);font-size:44px;display:block;margin:8px 0}
+.iw-box .row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:6px}
+.iw-box button{padding:14px 24px;border-radius:99px;font-weight:800;font-size:18px}
+#stillHere{background:var(--blue);color:#fff}
+#goVideoNow{background:var(--line)}
+</style>
+</head>
+<body>
+
+<button id="fsBtn" aria-label="เต็มจอ" title="เต็มจอ">⛶</button>
+
+<!-- 1) หน้าเริ่ม -->
+<section id="start" class="screen">
+  <img src="assets/logo.png" alt="carbonMICE">
+  <h1>จอบูธ carbonMICE</h1>
+  <div id="loadBar"><i></i></div>
+  <div id="loadInfo">กำลังเตรียมวิดีโอ…</div>
+  <button id="startBtn">▶ เริ่ม + เต็มจอ</button>
+</section>
+
+<!-- 2) วิดีโอวน -->
+<section id="videoScr" class="screen" hidden>
+  <video id="vid" playsinline preload="auto"></video>
+  <div id="tapHint">👆 แตะหน้าจอ เพื่อเล่นเกม &amp; รู้จัก carbonMICE</div>
+  <button id="soundChip" hidden>🔊 แตะเพื่อเปิดเสียง</button>
+</section>
+
+<!-- 3) เมนู -->
+<section id="menu" class="screen" hidden>
+  <div class="m-head">
+    <img src="assets/logo.png" alt="carbonMICE">
+    <button id="backVideo">▶ กลับเล่นวิดีโอ</button>
+  </div>
+  <div class="m-title">
+    <h1>จัดงานให้ <span>รักษ์โลก</span> ง่ายกว่าที่คิด</h1>
+    <p>เลือกได้เลย 👇</p>
+  </div>
+  <div class="cards">
+    <button class="card c-game" data-open="game">
+      <div class="emo">🎡</div>
+      <h2>เล่นเกม ลุ้นรางวัล</h2>
+      <p>หมุนวงล้อ หรือเล่นเกมภารกิจจัดงานสีเขียว</p>
+      <span class="go">เล่นเลย →</span>
+    </button>
+    <button class="card c-plat" data-open="platform">
+      <div class="emo">🌐</div>
+      <h2>รู้จัก Platform carbonMICE</h2>
+      <p>คำนวณคาร์บอนฟุตพริ้นท์งานอีเวนต์ ครบจบในที่เดียว</p>
+      <span class="go">เปิดดู ↗</span>
+    </button>
+  </div>
+</section>
+
+<!-- 4) กรอบเกม / platform -->
+<section id="frameScr" class="screen" hidden>
+  <div class="bar">
+    <button class="b-home" id="frameHome">🏠 กลับวิดีโอ</button>
+    <button class="b-menu" id="frameMenu">← เมนู</button>
+    <span id="frameTitle"></span>
+    <a class="b-ext" id="frameExt" href="#" target="_blank" rel="noopener" hidden>↗ เปิดแท็บใหม่</a>
+  </div>
+  <div id="frameWrap">
+    <div id="frameLoading">กำลังโหลด…</div>
+    <iframe id="frame" allow="autoplay; fullscreen; clipboard-write" referrerpolicy="no-referrer-when-downgrade"></iframe>
+  </div>
+</section>
+
+<!-- เตือนก่อนเด้งกลับวิดีโอ -->
+<section id="idleWarn" class="screen" hidden>
+  <div class="iw-box">
+    <h3>ยังใช้งานอยู่ไหม?</h3>
+    <p>จะกลับไปเล่นวิดีโอใน</p>
+    <b id="idleCount">30</b>
+    <div class="row">
+      <button id="stillHere">✋ ยังใช้อยู่</button>
+      <button id="goVideoNow">▶ กลับวิดีโอเลย</button>
+    </div>
+  </div>
+</section>
+
+<script>
+/* ================= ตั้งค่า ================= */
+const CONFIG = {
+  videos: ['videos/clip1.mp4', 'videos/clip2.mp4', 'videos/clip3.mp4'],
+  links: {
+    game:     { url: 'https://pairodtom342-web.github.io/carbonmice-booth-game/game/index.html', title: 'เกม carbonMICE', ext: false },
+    // platform ห้ามเปิดในกรอบ (X-Frame-Options: DENY) → เปิดแท็บใหม่ ปิดแท็บแล้วกลับมาจอบูธ
+    platform: { url: 'https://carbonmice.pea.co.th/', title: 'carbonmice.pea.co.th', newTab: true },
+  },
+  idleMs: 5 * 60 * 1000,   // ไม่มีใครแตะ 5 นาที → กลับวิดีโอ
+  warnMs: 30 * 1000,       // เตือนก่อน 30 วิ
+  cacheName: 'cmice-kiosk-videos-v1',
+};
+
+const $ = s => document.querySelector(s);
+const vid = $('#vid');
+const screens = { start: $('#start'), video: $('#videoScr'), menu: $('#menu'), frame: $('#frameScr') };
+let current = 'start';
+let started = false;
+
+/* ================= เตรียมวิดีโอ (เก็บลงเครื่อง กันเน็ตหลุด) ================= */
+const srcs = CONFIG.videos.slice();   // จะถูกแทนด้วย blob: เมื่อโหลดเสร็จ
+let vIndex = 0;
+
+async function prepareVideos() {
+  const info = $('#loadInfo'), bar = $('#loadBar i');
+  let done = 0, failed = 0;
+  const total = CONFIG.videos.length;
+  const update = () => {
+    bar.style.width = (done / total * 100) + '%';
+    info.textContent = done < total
+      ? `กำลังเตรียมวิดีโอ ${done}/${total} (เก็บไว้ในเครื่อง เผื่อเน็ตหลุด)`
+      : (failed ? `พร้อม — ${failed} คลิปจะเล่นผ่านเน็ต` : '✅ วิดีโอพร้อมเล่นแบบออฟไลน์');
+  };
+  update();
+  let cache = null;
+  try { cache = await caches.open(CONFIG.cacheName); } catch (e) {}
+  await Promise.all(CONFIG.videos.map(async (url, i) => {
+    try {
+      const abs = new URL(url, location.href).href;
+      let res = cache ? await cache.match(abs) : null;
+      if (!res) {
+        const net = await fetch(abs, { cache: 'reload' });
+        if (!net.ok) throw new Error(net.status);
+        if (cache) { try { await cache.put(abs, net.clone()); } catch (e) {} }
+        res = net;
+      }
+      const blob = await res.blob();
+      srcs[i] = URL.createObjectURL(blob);
+    } catch (e) { failed++; console.warn('video cache fail', url, e); }
+    done++; update();
+  }));
+}
+
+function loadClip(i) {
+  vIndex = (i + srcs.length) % srcs.length;
+  vid.src = srcs[vIndex];
+  lastTime = -1; stallSince = Date.now();
+  playVideo();
+}
+function playVideo() {
+  vid.muted = false;
+  const p = vid.play();
+  if (p && p.catch) p.catch(() => {
+    // เบราว์เซอร์ไม่ให้เล่นมีเสียง → เล่นแบบปิดเสียงก่อน แล้วโชว์ปุ่มเปิดเสียง
+    vid.muted = true;
+    vid.play().catch(() => {});
+    $('#soundChip').hidden = false;
+  });
+}
+vid.addEventListener('ended', () => loadClip(vIndex + 1));
+vid.addEventListener('error', () => setTimeout(() => { if (current === 'video') loadClip(vIndex + 1); }, 1000));
+vid.addEventListener('playing', () => { if (!vid.muted) $('#soundChip').hidden = true; });
+
+// watchdog: ถ้าวิดีโอค้างเกิน 15 วิ ข้ามไปคลิปถัดไป
+let lastTime = -1, stallSince = Date.now();
+setInterval(() => {
+  if (current !== 'video') return;
+  if (vid.currentTime !== lastTime) { lastTime = vid.currentTime; stallSince = Date.now(); return; }
+  if (Date.now() - stallSince > 15000) loadClip(vIndex + 1);
+}, 3000);
+
+$('#soundChip').addEventListener('click', e => {
+  e.stopPropagation();
+  vid.muted = false; vid.play().catch(() => {});
+  $('#soundChip').hidden = true;
+});
+
+/* ================= สลับหน้าจอ ================= */
+function show(name) {
+  Object.entries(screens).forEach(([k, el]) => el.hidden = (k !== name));
+  current = name;
+  document.body.classList.toggle('in-frame', name === 'frame');
+  hideIdleWarn();
+  if (name === 'video') {
+    stopFrame();
+    if (!vid.src) loadClip(vIndex); else playVideo();
+  } else {
+    vid.pause();
+  }
+  bumpActivity();
+}
+
+function openFrame(key) {
+  const l = CONFIG.links[key];
+  if (l.newTab) {
+    window.open(l.url, 'cmice_platform');
+    bumpActivity();
+    return;
+  }
+  $('#frameTitle').textContent = l.title;
+  $('#frameExt').hidden = !l.ext;
+  $('#frameExt').href = l.url;
+  $('#frameLoading').hidden = false;
+  $('#frame').src = l.url;
+  show('frame');
+}
+function stopFrame() {
+  const f = $('#frame');
+  if (f.getAttribute('src') && f.getAttribute('src') !== 'about:blank') f.src = 'about:blank';
+}
+$('#frame').addEventListener('load', () => { $('#frameLoading').hidden = true; });
+
+$('#startBtn').addEventListener('click', () => {
+  started = true;
+  goFullscreen();
+  keepAwake();
+  show('video');
+});
+$('#videoScr').addEventListener('click', () => show('menu'));
+$('#backVideo').addEventListener('click', () => show('video'));
+document.querySelectorAll('[data-open]').forEach(b => b.addEventListener('click', () => openFrame(b.dataset.open)));
+$('#frameHome').addEventListener('click', () => show('video'));
+$('#frameMenu').addEventListener('click', () => { stopFrame(); show('menu'); });
+
+/* ================= เต็มจอ + กันจอดับ ================= */
+function isFs() { return document.fullscreenElement || document.webkitFullscreenElement; }
+function goFullscreen() {
+  const el = document.documentElement;
+  const req = el.requestFullscreen || el.webkitRequestFullscreen;
+  if (req && !isFs()) { try { const p = req.call(el, { navigationUI: 'hide' }); if (p && p.catch) p.catch(() => {}); } catch (e) {} }
+}
+function exitFullscreen() {
+  const ex = document.exitFullscreen || document.webkitExitFullscreen;
+  if (ex && isFs()) { try { const p = ex.call(document); if (p && p.catch) p.catch(() => {}); } catch (e) {} }
+}
+function syncFsBtn() { $('#fsBtn').textContent = isFs() ? '✕' : '⛶'; $('#fsBtn').title = isFs() ? 'ออกจากเต็มจอ' : 'เต็มจอ'; }
+$('#fsBtn').addEventListener('click', e => { e.stopPropagation(); isFs() ? exitFullscreen() : goFullscreen(); });
+document.addEventListener('fullscreenchange', syncFsBtn);
+document.addEventListener('webkitfullscreenchange', syncFsBtn);
+
+let wakeLock = null;
+async function keepAwake() {
+  try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {}
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && started) {
+    keepAwake();
+    bumpActivity();   // กลับจากแท็บ platform → นับเป็นการใช้งาน
+    if (current === 'video') playVideo();
+  }
+});
+
+/* ================= ไม่มีใครแตะ 5 นาที → กลับวิดีโอ ================= */
+let lastActivity = Date.now();
+function bumpActivity() { lastActivity = Date.now(); if (!$('#idleWarn').hidden) hideIdleWarn(); }
+function hideIdleWarn() { $('#idleWarn').hidden = true; }
+['pointerdown', 'keydown'].forEach(ev => document.addEventListener(ev, bumpActivity, true));
+// แตะใน iframe ครั้งแรก → หน้าหลักเสีย focus: นับเป็นการใช้งาน
+// (ไม่ดึง focus คืน เพราะจะขัดการพิมพ์ในหน้า platform — ครั้งต่อๆ ไปพึ่งกล่องเตือน 30 วิ)
+window.addEventListener('blur', () => { if (current === 'frame') bumpActivity(); });
+setInterval(() => {
+  if (current !== 'menu' && current !== 'frame') return;
+  const idle = Date.now() - lastActivity;
+  if (idle >= CONFIG.idleMs) { show('video'); return; }
+  if (idle >= CONFIG.idleMs - CONFIG.warnMs) {
+    $('#idleWarn').hidden = false;
+    $('#idleCount').textContent = Math.ceil((CONFIG.idleMs - idle) / 1000);
+  }
+}, 500);
+$('#stillHere').addEventListener('click', e => { e.stopPropagation(); bumpActivity(); });
+$('#goVideoNow').addEventListener('click', e => { e.stopPropagation(); show('video'); });
+
+prepareVideos();
+syncFsBtn();
+</script>
+</body>
+</html>
