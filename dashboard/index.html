@@ -353,7 +353,7 @@ async function prepareVideos() {
 /* ================= รอบโฆษณา ================= */
 const dock = $('#dock'), vid = $('#adVid');
 let adsOn = true, nextIdx = 0, timer = null, showing = false, soundOn = false;
-let lastT = -1, stallAt = 0;
+let lastT = -1, stallAt = 0, adToken = 0;
 
 function schedule() {
   clearTimeout(timer);
@@ -373,12 +373,15 @@ function showAd(previewIdx) {
   $('#adProg').style.width = '0';
   applySound();
   showing = true; lastT = -1; stallAt = Date.now();
+  const token = ++adToken;
   vid.play().catch(() => { vid.muted = true; soundOn = false; syncSound(); vid.play().catch(() => {}); });
-  requestAnimationFrame(() => dock.classList.add('show'));
+  // rAF ถูกพักตอนหน้าต่างไม่อยู่ด้านหน้า → ถ้ารอบนี้จบไปแล้วห้ามเปิดกรอบ (เคยค้างเป็นกรอบดำ)
+  requestAnimationFrame(() => { if (showing && token === adToken) dock.classList.add('show'); });
 }
 function hideAd() {
   if (!showing) return;
   showing = false;
+  adToken++;
   setExpanded(false);
   dock.classList.remove('show');
   setTimeout(() => { if (!showing) { vid.pause(); vid.removeAttribute('src'); vid.load(); } }, 500);
@@ -389,11 +392,18 @@ vid.addEventListener('error', () => { if (showing) hideAd(); });
 vid.addEventListener('timeupdate', () => {
   if (vid.duration) $('#adProg').style.width = (vid.currentTime / vid.duration * 100) + '%';
 });
-setInterval(() => {   // คลิปค้างเกิน 15 วิ → ปิดรอบนี้
-  if (!showing) return;
+// ตัวตรวจทุก 1 วิ: กรอบต้องไม่ค้างเป็นจอดำ
+setInterval(() => {
+  if (!showing) {
+    if (dock.classList.contains('show')) { dock.classList.remove('show'); setExpanded(false); }
+    return;
+  }
+  const atEnd = vid.ended || (vid.duration > 0 && vid.currentTime >= vid.duration - 0.25 && vid.paused);
+  if (atEnd || !vid.getAttribute('src')) return hideAd();
   if (vid.currentTime !== lastT) { lastT = vid.currentTime; stallAt = Date.now(); }
-  else if (Date.now() - stallAt > 15000) hideAd();
-}, 3000);
+  else if (!document.hidden && Date.now() - stallAt > 15000) hideAd();   // คลิปค้างเกิน 15 วิ
+  else if (document.hidden) stallAt = Date.now();
+}, 1000);
 
 function applySound() { vid.muted = !soundOn; syncSound(); }
 const ICON_SOUND = {
