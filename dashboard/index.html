@@ -26,7 +26,7 @@ button{font:inherit;border:0;cursor:pointer;background:none;color:inherit}
    แต่ dashboard ไม่รู้ว่าเต็มจอ ปุ่มเดิมยังอยู่ → ตอนเต็มจอเปลี่ยนเป็นป้าย "LIVE" ปิดทับ ชี้/แตะแล้วค่อยเป็น "ย่อหน้าจอ" */
 #fsBtn{
   position:fixed;z-index:40;top:16px;left:50%;transform:translateX(-50%);
-  min-width:142px;height:40px;padding:8px 16px;border-radius:999px;background:#E2F2FF;
+  min-width:142.234px;height:40px;padding:8px 16px;border-radius:999px;background:#E2F2FF;
   display:flex;align-items:center;justify-content:center;gap:12px;
   font-family:'IBM Plex Sans Thai','Sarabun',sans-serif;font-size:16px;font-weight:600;color:#0065D0;line-height:24px;white-space:nowrap;
   transition:background .2s,color .2s,box-shadow .2s
@@ -42,7 +42,7 @@ body.is-fs #fsBtn .act{display:none}
 body.is-fs #fsBtn.reveal{background:#E2F2FF;color:#0065D0}
 body.is-fs #fsBtn.reveal .live{display:none}
 body.is-fs #fsBtn.reveal .act{display:flex}
-#fsBtn .act{align-items:center;gap:12px}
+#fsBtn .act{display:flex;align-items:flex-start;gap:12px}   /* เหมือนปุ่มเดิม: ไอคอนชิดบนของแถวข้อความ */
 body.is-fs #fsBtn img{transform:rotate(180deg)}
 
 #ui{position:fixed;inset:0;pointer-events:none;z-index:45}
