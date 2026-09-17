@@ -21,16 +21,31 @@ button{font:inherit;border:0;cursor:pointer;background:none;color:inherit}
 /* ---------- dashboard ---------- */
 #dash{position:fixed;inset:0;width:100%;height:100%;border:0;background:#fff}
 
-/* ---------- ปุ่ม "ขยายหน้าจอ" ทับตำแหน่งเดิมของ dashboard (fixed top-4 กึ่งกลาง 142×40) ---------- */
+/* ---------- ปุ่ม "ขยายหน้าจอ" ทับตำแหน่งเดิมของ dashboard (fixed top-4 กึ่งกลาง 142×40) ----------
+   ต้องเต็มจอทั้งหน้าเอง: ถ้าใช้ปุ่มของ dashboard, Chrome ล็อก (inert) ทุกอย่างนอก iframe → กดปุ่มวิดีโอไม่ได้
+   แต่ dashboard ไม่รู้ว่าเต็มจอ ปุ่มเดิมยังอยู่ → ตอนเต็มจอเปลี่ยนเป็นป้าย "LIVE" ปิดทับ ชี้/แตะแล้วค่อยเป็น "ย่อหน้าจอ" */
 #fsBtn{
   position:fixed;z-index:40;top:16px;left:50%;transform:translateX(-50%);
   min-width:142px;height:40px;padding:8px 16px;border-radius:999px;background:#E2F2FF;
   display:flex;align-items:center;justify-content:center;gap:12px;
-  font-family:'IBM Plex Sans Thai','Sarabun',sans-serif;font-size:16px;font-weight:600;color:#0065D0;line-height:24px;white-space:nowrap
+  font-family:'IBM Plex Sans Thai','Sarabun',sans-serif;font-size:16px;font-weight:600;color:#0065D0;line-height:24px;white-space:nowrap;
+  transition:background .2s,color .2s,box-shadow .2s
 }
 #fsBtn:hover{background:#d6ebfc}
 #fsBtn img{width:15px;height:15px;display:block}
+#fsBtn .live{display:none;align-items:center;gap:8px}
+#fsBtn .live i{width:9px;height:9px;border-radius:50%;background:#18C29C;box-shadow:0 0 0 0 rgba(24,194,156,.6);animation:live 1.8s infinite}
+@keyframes live{0%{box-shadow:0 0 0 0 rgba(24,194,156,.55)}70%{box-shadow:0 0 0 9px rgba(24,194,156,0)}100%{box-shadow:0 0 0 0 rgba(24,194,156,0)}}
+body.is-fs #fsBtn{background:#fff;color:var(--navy);box-shadow:0 4px 16px rgba(10,20,50,.12)}
+body.is-fs #fsBtn .live{display:flex}
+body.is-fs #fsBtn .act{display:none}
+body.is-fs #fsBtn.reveal{background:#E2F2FF;color:#0065D0}
+body.is-fs #fsBtn.reveal .live{display:none}
+body.is-fs #fsBtn.reveal .act{display:flex}
+#fsBtn .act{align-items:center;gap:12px}
 body.is-fs #fsBtn img{transform:rotate(180deg)}
+
+#ui{position:fixed;inset:0;pointer-events:none;z-index:45}
 
 /* ---------- กรอบวิดีโอโฆษณา ---------- */
 #backdrop{
@@ -95,21 +110,47 @@ body.expanded .dock-head img{height:28px}
   :root{--dock-gap:12px}
 }
 
-/* ---------- ปุ่มเปิด/ปิดวิดีโอ (โผล่เมื่อขยับเมาส์/แตะที่มุมซ้ายล่าง) ---------- */
+/* ---------- ปุ่มควบคุมมุมซ้ายล่าง (โผล่เมื่อขยับเมาส์/แตะ แล้วซ่อนเอง) ---------- */
 /* dashboard (iframe) กินเหตุการณ์เมาส์ทั้งจอ → ใช้พื้นที่โปร่งใสมุมซ้ายล่างรับแทน */
-#hot{position:fixed;z-index:44;left:0;bottom:0;width:300px;height:110px}
-#adsToggle{
-  position:fixed;z-index:45;left:16px;bottom:16px;
-  display:flex;align-items:center;gap:10px;padding:9px 16px 9px 10px;border-radius:99px;
-  background:rgba(26,26,46,.86);color:#fff;font-weight:700;font-size:15px;
-  box-shadow:0 8px 24px rgba(0,0,0,.25);
+#hot{position:fixed;left:0;bottom:0;width:min(620px,100vw);height:120px;pointer-events:auto}
+#ctrls{
+  position:fixed;left:16px;bottom:16px;display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px;
+  max-width:calc(100vw - 32px);
   opacity:0;transform:translateY(10px);pointer-events:none;transition:opacity .25s,transform .25s
 }
-body.ui-on #adsToggle{opacity:1;transform:none;pointer-events:auto}
+body.ui-on #ctrls{opacity:1;transform:none;pointer-events:auto}
+.pill{
+  display:flex;align-items:center;gap:10px;height:42px;padding:0 16px;border-radius:99px;
+  background:rgba(26,26,46,.86);color:#fff;font-weight:700;font-size:15px;white-space:nowrap;
+  box-shadow:0 8px 24px rgba(0,0,0,.25)
+}
+.pill:hover{background:rgba(26,26,46,.96)}
+.pill svg{width:16px;height:16px;display:block}
+#adsToggle{padding-left:10px}
+#fsExit{display:none}
+body.is-fs #fsExit{display:flex}
 .sw{width:40px;height:22px;border-radius:99px;background:#5A6072;position:relative;transition:background .2s}
 .sw::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:left .2s}
 #adsToggle.on .sw{background:var(--deep-mint)}
 #adsToggle.on .sw::after{left:21px}
+.pv{position:relative}
+#pvBtn{background:linear-gradient(135deg,var(--blue),#3A82FF)}
+#pvMenu{
+  position:absolute;left:0;bottom:calc(100% + 10px);min-width:250px;padding:8px;border-radius:16px;
+  background:#fff;box-shadow:0 14px 40px rgba(10,20,50,.3);display:flex;flex-direction:column;gap:4px
+}
+#pvMenu .pv-h{font-size:12px;font-weight:700;color:var(--slate);padding:4px 10px 2px}
+#pvMenu button{
+  display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;text-align:left;
+  font-size:15px;font-weight:600;color:var(--navy)
+}
+#pvMenu button:hover{background:var(--bg)}
+#pvMenu .shape{
+  flex:0 0 auto;border:2px solid var(--blue);border-radius:4px;background:#EAF2FF
+}
+#pvMenu .shape.land{width:28px;height:16px}
+#pvMenu .shape.port{width:14px;height:24px;margin:0 7px}
+#pvMenu small{display:block;font-size:12px;color:var(--slate);font-weight:500}
 
 /* ---------- หน้าสร้างลิงก์ (เปิดโดยไม่มี ?event=) ---------- */
 #builder{
@@ -163,8 +204,12 @@ body.ui-on #adsToggle{opacity:1;transform:none;pointer-events:auto}
 <!-- dashboard -->
 <iframe id="dash" hidden allow="fullscreen" title="carbonMICE Dashboard"></iframe>
 
-<button id="fsBtn" hidden><img src="fs-icon.svg" alt=""><span id="fsLabel">ขยายหน้าจอ</span></button>
+<button id="fsBtn" hidden>
+  <span class="act"><img src="fs-icon.svg" alt=""><span id="fsLabel">ขยายหน้าจอ</span></span>
+  <span class="live"><i></i>LIVE Dashboard</span>
+</button>
 
+<div id="ui" hidden>
 <div id="backdrop"></div>
 
 <div id="dock" class="land" aria-live="polite">
@@ -186,8 +231,22 @@ body.ui-on #adsToggle{opacity:1;transform:none;pointer-events:auto}
   </div>
 </div>
 
-<div id="hot" hidden></div>
-<button id="adsToggle" class="on"><span class="sw"></span><span id="adsLabel">วิดีโอโฆษณา: เปิด</span></button>
+<div id="hot"></div>
+<div id="ctrls">
+  <button class="pill" id="fsExit" title="ออกจากเต็มจอ">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M10 14l-7 7"/></svg>ย่อหน้าจอ
+  </button>
+  <button class="pill on" id="adsToggle"><span class="sw"></span><span id="adsLabel">วิดีโอโฆษณา: เปิด</span></button>
+  <div class="pv">
+    <button class="pill" id="pvBtn" aria-expanded="false">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l12.5-7.5z"/></svg>Preview วิดีโอ
+    </button>
+    <div id="pvMenu" hidden>
+      <div class="pv-h">เลือกคลิปที่จะเล่นตอนนี้</div>
+    </div>
+  </div>
+</div>
+</div>
 
 <script>
 /* ================= ตั้งค่า ================= */
@@ -195,8 +254,8 @@ const CONFIG = {
   base: 'https://carbonmice.pea.co.th/event/',
   // ลำดับวน: dashboard อย่างเดียว → แนวนอน → dashboard อย่างเดียว → แนวตั้ง → …
   ads: [
-    { src: '../videos/clip1.mp4', shape: 'land' },  // YouTube wZLQ6A69Jtw
-    { src: '../videos/clip2.mp4', shape: 'port' },  // Facebook สะกิดต่อมเอ๊ะ (1JTjAnzNjv)
+    { src: '../videos/clip1.mp4', shape: 'land', label: 'คลิป 1 · แนวนอน', note: 'carbonMICE (YouTube) · 2:08' },
+    { src: '../videos/clip2.mp4', shape: 'port', label: 'คลิป 2 · แนวตั้ง', note: 'สะกิดต่อมเอ๊ะ (Facebook) · 1:36' },
   ],
   gapMs: 5 * 60 * 1000,     // dashboard อย่างเดียวก่อนขึ้นโฆษณาแต่ละรอบ
   uiHideMs: 3000,           // ปุ่มเปิด/ปิดวิดีโอ + เมาส์ ซ่อนเองหลังไม่ขยับ
@@ -243,18 +302,32 @@ function initBuilder() {
   }));
 }
 
-/* ================= เต็มจอ (ทั้งหน้า — วิดีโอยังอยู่) ================= */
+/* ================= เต็มจอ (ทั้งหน้า — วิดีโอ/ปุ่มยังใช้ได้) ================= */
 function isFs() { return !!(document.fullscreenElement || document.webkitFullscreenElement); }
-function toggleFs() {
+function enterFs() {
   const el = document.documentElement;
-  try {
-    if (isFs()) (document.exitFullscreen || document.webkitExitFullscreen).call(document);
-    else (el.requestFullscreen || el.webkitRequestFullscreen).call(el);
-  } catch (e) {}
+  try { const r = (el.requestFullscreen || el.webkitRequestFullscreen).call(el); if (r && r.catch) r.catch(() => {}); } catch (e) {}
+}
+function exitFs() {
+  try { const r = (document.exitFullscreen || document.webkitExitFullscreen).call(document); if (r && r.catch) r.catch(() => {}); } catch (e) {}
 }
 function syncFs() {
   document.body.classList.toggle('is-fs', isFs());
   $('#fsLabel').textContent = isFs() ? 'ย่อหน้าจอ' : 'ขยายหน้าจอ';
+  setReveal(false);
+  pokeUI();
+}
+// ตอนเต็มจอ: ป้าย LIVE → ชี้เมาส์/แตะครั้งแรก = โชว์ "ย่อหน้าจอ" · กดอีกครั้ง = ย่อ
+let revealTimer = null;
+function setReveal(on) {
+  $('#fsBtn').classList.toggle('reveal', on);
+  clearTimeout(revealTimer);
+  if (on) revealTimer = setTimeout(() => setReveal(false), CONFIG.uiHideMs);
+}
+function onFsBtn() {
+  if (!isFs()) return enterFs();
+  if (!$('#fsBtn').classList.contains('reveal')) return setReveal(true);
+  exitFs();
 }
 
 /* ================= เตรียมวิดีโอ (เก็บลงเครื่อง กันเน็ตหลุด) ================= */
@@ -284,16 +357,20 @@ let lastT = -1, stallAt = 0;
 
 function schedule() {
   clearTimeout(timer);
-  if (adsOn) timer = setTimeout(showAd, CONFIG.gapMs);
+  if (adsOn) timer = setTimeout(() => showAd(), CONFIG.gapMs);
 }
-function showAd() {
-  if (!adsOn) return;
-  const i = nextIdx;
-  nextIdx = (nextIdx + 1) % CONFIG.ads.length;
+// showAd() = ตามรอบ · showAd(i) = Preview คลิป i ทันที (ไม่กระทบลำดับรอบ)
+function showAd(previewIdx) {
+  const preview = Number.isInteger(previewIdx);
+  if (!preview && !adsOn) return;
+  clearTimeout(timer);
+  const i = preview ? previewIdx : nextIdx;
+  if (!preview) nextIdx = (nextIdx + 1) % CONFIG.ads.length;
   dock.classList.remove('land', 'port');
   dock.classList.add(CONFIG.ads[i].shape);
   vid.src = srcs[i];
   vid.currentTime = 0;
+  $('#adProg').style.width = '0';
   applySound();
   showing = true; lastT = -1; stallAt = Date.now();
   vid.play().catch(() => { vid.muted = true; soundOn = false; syncSound(); vid.play().catch(() => {}); });
@@ -340,7 +417,7 @@ function setExpanded(on) {
 $('#adExpand').addEventListener('click', () => setExpanded(!document.body.classList.contains('expanded')));
 $('#backdrop').addEventListener('click', () => setExpanded(false));
 $('#adClose').addEventListener('click', hideAd);
-document.addEventListener('keydown', e => { if (e.key === 'Escape') setExpanded(false); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { setExpanded(false); setMenu(false); } });
 
 /* ================= เปิด/ปิดวิดีโอ ================= */
 function setAds(on, save) {
@@ -353,12 +430,33 @@ function setAds(on, save) {
 }
 $('#adsToggle').addEventListener('click', () => setAds(!adsOn, true));
 
-/* ปุ่มเปิด/ปิดวิดีโอ โผล่เมื่อขยับเมาส์/แตะ (มุมซ้ายล่าง หรือส่วนของหน้าเรา) แล้วซ่อนเอง */
+$('#fsExit').addEventListener('click', exitFs);
+
+/* ================= Preview วิดีโอ ================= */
+const pvMenu = $('#pvMenu');
+CONFIG.ads.forEach((a, i) => {
+  const b = document.createElement('button');
+  b.innerHTML = `<span class="shape ${a.shape}"></span><span>${a.label}<small>${a.note}</small></span>`;
+  b.addEventListener('click', () => { setMenu(false); showAd(i); });
+  pvMenu.appendChild(b);
+});
+function setMenu(open) {
+  pvMenu.hidden = !open;
+  $('#pvBtn').setAttribute('aria-expanded', open);
+  if (!open) pokeUI();
+}
+$('#pvBtn').addEventListener('click', e => { e.stopPropagation(); setMenu(pvMenu.hidden); });
+document.addEventListener('click', e => { if (!pvMenu.hidden && !e.target.closest('.pv')) setMenu(false); });
+
+/* ปุ่มควบคุม โผล่เมื่อขยับเมาส์/แตะ (มุมซ้ายล่าง หรือส่วนของหน้าเรา) แล้วซ่อนเอง — เมนู Preview เปิดอยู่ = ไม่ซ่อน */
 let uiTimer = null;
 function pokeUI() {
   document.body.classList.add('ui-on');
   clearTimeout(uiTimer);
-  uiTimer = setTimeout(() => document.body.classList.remove('ui-on'), CONFIG.uiHideMs);
+  uiTimer = setTimeout(function hide() {
+    if (!pvMenu.hidden) { uiTimer = setTimeout(hide, CONFIG.uiHideMs); return; }
+    document.body.classList.remove('ui-on');
+  }, CONFIG.uiHideMs);
 }
 ['mousemove', 'pointerdown', 'touchstart', 'keydown'].forEach(ev => document.addEventListener(ev, pokeUI, { passive: true }));
 
@@ -372,9 +470,11 @@ if (!eventId) {
 } else {
   $('#dash').src = CONFIG.base + eventId + '/dashboard?preview=true';
   $('#dash').hidden = false;
+  $('#ui').hidden = false;
   $('#fsBtn').hidden = false;
-  $('#hot').hidden = false;
-  $('#fsBtn').addEventListener('click', toggleFs);
+  $('#fsBtn').addEventListener('click', onFsBtn);
+  $('#fsBtn').addEventListener('pointerenter', e => { if (isFs() && e.pointerType === 'mouse') setReveal(true); });
+  $('#fsBtn').addEventListener('pointermove', e => { if (isFs() && e.pointerType === 'mouse') setReveal(true); });
   document.addEventListener('fullscreenchange', syncFs);
   document.addEventListener('webkitfullscreenchange', syncFs);
 
