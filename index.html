@@ -208,7 +208,18 @@ body.in-frame #fsBtn{bottom:auto;top:10px;right:10px;width:44px;height:44px;font
 <script>
 /* ================= ตั้งค่า ================= */
 const CONFIG = {
-  videos: ['videos/clip1.mp4', 'videos/clip2.mp4', 'videos/clip3.mp4'],
+  // ลำดับวิดีโอวน — เพิ่ม/ลด/สลับคลิปแก้ที่นี่ที่เดียว (dashboard/ ใช้ clip1 clip2 ห้ามเปลี่ยนชื่อ 2 ไฟล์นี้)
+  videos: [
+    'videos/clip1.mp4',                      // PEA Tips EP.21 (แนวนอน 2:09)
+    'videos/clip2.mp4',                      // Reel สะกิดต่อมเอ๊ะ (1:37)
+    'videos/clip3.mp4',                      // Reel KHE Hotel Expo (0:21)
+    'videos/k1-carbon-neutral-3-steps.mp4',  // K1 Carbon Neutral Event คืออะไร ใน 3 ขั้น (0:49)
+    'videos/k2-carbon-sources.mp4',          // K2 คาร์บอนของงานมาจากไหน (0:47)
+    'videos/k3-waste-destination.mp4',       // K3 แยกขยะ คาร์บอนลดจริงไหม (0:53)
+    'videos/a1-6-to-600-tons.mp4',           // A1 จาก 6 ตัน ถึง 600 ตัน (0:40)
+    'videos/a2-meet-carbonmice.mp4',         // A2 รู้จัก carbonMICE ใน 1 นาที (0:49)
+    'videos/a3-scan-this-qr.mp4',            // A3 เจอ QR นี้ที่งานไหน สแกนเลย (0:38)
+  ],
   links: {
     game:     { url: 'https://pairodtom342-web.github.io/carbonmice-booth-game/game/index.html', title: 'เกม carbonMICE', ext: false },
     // platform ห้ามเปิดในกรอบ (X-Frame-Options: DENY) → เปิดแท็บใหม่ ปิดแท็บแล้วกลับมาจอบูธ
@@ -242,22 +253,35 @@ async function prepareVideos() {
   update();
   let cache = null;
   try { cache = await caches.open(CONFIG.cacheName); } catch (e) {}
-  await Promise.all(CONFIG.videos.map(async (url, i) => {
-    try {
-      const abs = new URL(url, location.href).href;
-      let res = cache ? await cache.match(abs) : null;
-      if (!res) {
-        const net = await fetch(abs, { cache: 'reload' });
-        if (!net.ok) throw new Error(net.status);
-        if (cache) { try { await cache.put(abs, net.clone()); } catch (e) {} }
-        res = net;
+  // โหลดทีละคลิปตามลำดับ (ไม่โหลดพร้อมกัน) และหยุดพักตอนมีคนเปิดเกม/กรอบอยู่
+  // — เดิมโหลดทุกคลิปพร้อมกัน แย่งเน็ตจนเกมขึ้นจอขาวหลายวินาทีบนเน็ตช้า
+  for (let i = 0; i < CONFIG.videos.length; i++) {
+    const url = CONFIG.videos[i];
+    for (;;) {
+      try {
+        const abs = new URL(url, location.href).href;
+        let res = cache ? await cache.match(abs) : null;
+        if (!res) {
+          while (current === 'frame') await new Promise(r => setTimeout(r, 1000));
+          dlAbort = new AbortController();
+          const net = await fetch(abs, { cache: 'reload', signal: dlAbort.signal });
+          if (!net.ok) throw new Error(net.status);
+          if (cache) { try { await cache.put(abs, net.clone()); } catch (e) { if (e && e.name === 'AbortError') throw e; } }
+          res = net;
+        }
+        const blob = await res.blob();
+        srcs[i] = URL.createObjectURL(blob);
+      } catch (e) {
+        if (e && e.name === 'AbortError') continue;   // ถูกพักเพราะเปิดเกม → รอแล้วโหลดคลิปนี้ใหม่
+        failed++; console.warn('video cache fail', url, e);
       }
-      const blob = await res.blob();
-      srcs[i] = URL.createObjectURL(blob);
-    } catch (e) { failed++; console.warn('video cache fail', url, e); }
+      break;
+    }
+    dlAbort = null;
     done++; update();
-  }));
+  }
 }
+let dlAbort = null;   // การดาวน์โหลดวิดีโอที่กำลังวิ่งอยู่ (ยกเลิกได้เมื่อเปิดเกม)
 
 function loadClip(i) {
   vIndex = (i + srcs.length) % srcs.length;
@@ -319,6 +343,7 @@ function openFrame(key) {
   $('#frameExt').hidden = !l.ext;
   $('#frameExt').href = l.url;
   $('#frameLoading').hidden = false;
+  if (dlAbort) dlAbort.abort();   // พักการโหลดวิดีโอ ให้เน็ตกับเกมก่อน (โหลดต่อเมื่อออกจากกรอบ)
   $('#frame').src = l.url;
   show('frame');
 }
