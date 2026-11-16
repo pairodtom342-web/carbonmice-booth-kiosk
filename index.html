@@ -228,6 +228,7 @@ const CONFIG = {
   idleMs: 5 * 60 * 1000,   // ไม่มีใครแตะ 5 นาที → กลับวิดีโอ
   warnMs: 30 * 1000,       // เตือนก่อน 30 วิ
   cacheName: 'cmice-kiosk-videos-v1',
+  retryMs: 60 * 1000,     // คลิปที่เก็บลงเครื่องไม่สำเร็จ ลองใหม่ทุก 1 นาที
 };
 
 const $ = s => document.querySelector(s);
@@ -255,30 +256,38 @@ async function prepareVideos() {
   try { cache = await caches.open(CONFIG.cacheName); } catch (e) {}
   // โหลดทีละคลิปตามลำดับ (ไม่โหลดพร้อมกัน) และหยุดพักตอนมีคนเปิดเกม/กรอบอยู่
   // — เดิมโหลดทุกคลิปพร้อมกัน แย่งเน็ตจนเกมขึ้นจอขาวหลายวินาทีบนเน็ตช้า
-  for (let i = 0; i < CONFIG.videos.length; i++) {
-    const url = CONFIG.videos[i];
-    for (;;) {
-      try {
-        const abs = new URL(url, location.href).href;
-        let res = cache ? await cache.match(abs) : null;
-        if (!res) {
-          while (current === 'frame') await new Promise(r => setTimeout(r, 1000));
-          dlAbort = new AbortController();
-          const net = await fetch(abs, { cache: 'reload', signal: dlAbort.signal });
-          if (!net.ok) throw new Error(net.status);
-          if (cache) { try { await cache.put(abs, net.clone()); } catch (e) { if (e && e.name === 'AbortError') throw e; } }
-          res = net;
+  let todo = CONFIG.videos.map((_, i) => i);
+  for (;;) {
+    const retry = [];
+    for (const i of todo) {
+      const url = CONFIG.videos[i];
+      for (;;) {
+        try {
+          const abs = new URL(url, location.href).href;
+          let res = cache ? await cache.match(abs) : null;
+          if (!res) {
+            while (current === 'frame') await new Promise(r => setTimeout(r, 1000));
+            dlAbort = new AbortController();
+            const net = await fetch(abs, { cache: 'reload', signal: dlAbort.signal });
+            if (!net.ok) throw new Error(net.status);
+            if (cache) { try { await cache.put(abs, net.clone()); } catch (e) { if (e && e.name === 'AbortError') throw e; } }
+            res = net;
+          }
+          const blob = await res.blob();
+          srcs[i] = URL.createObjectURL(blob);
+        } catch (e) {
+          if (e && e.name === 'AbortError') continue;   // ถูกพักเพราะเปิดเกม → รอแล้วโหลดคลิปนี้ใหม่
+          failed++; retry.push(i); console.warn('video cache fail', url, e);
         }
-        const blob = await res.blob();
-        srcs[i] = URL.createObjectURL(blob);
-      } catch (e) {
-        if (e && e.name === 'AbortError') continue;   // ถูกพักเพราะเปิดเกม → รอแล้วโหลดคลิปนี้ใหม่
-        failed++; console.warn('video cache fail', url, e);
+        break;
       }
-      break;
+      dlAbort = null;
+      done++; update();
     }
-    dlAbort = null;
-    done++; update();
+    if (!retry.length) break;
+    // เน็ตสะดุด: คลิปที่โหลดไม่สำเร็จเล่นผ่านเน็ตไปก่อน แล้วลองเก็บลงเครื่องใหม่ทุก 1 นาทีจนครบ
+    await new Promise(r => setTimeout(r, CONFIG.retryMs));
+    failed -= retry.length; done -= retry.length; todo = retry;
   }
 }
 let dlAbort = null;   // การดาวน์โหลดวิดีโอที่กำลังวิ่งอยู่ (ยกเลิกได้เมื่อเปิดเกม)
